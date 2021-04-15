@@ -1,6 +1,8 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Block from "./Block";
+import { transform } from "@babel/core";
+import preset from "@babel/preset-react";
 const Contemplations = ({ sheetId }) => {
   const url = `https://spreadsheets.google.com/feeds/worksheets/${sheetId}/public/basic?alt=json`;
   const [page, setPage] = useState(<div>contemplations</div>);
@@ -27,7 +29,6 @@ const Contemplations = ({ sheetId }) => {
   const readBlueprint = (entries, template) => {
     console.log(template);
     console.log("reading blueprint");
-    console.log(entries);
     const children = [];
     let args = {};
     let elementType = null;
@@ -41,18 +42,11 @@ const Contemplations = ({ sheetId }) => {
         if (!elementType) {
           elementType = template[text];
         } else {
-          let code = elementType.code;
-          let r = code.match(/\{[\w]+\}/g);
-          console.log(r);
-          r &&
-            r.forEach((state) => {
-              var regex = new RegExp(state, "g");
-              var arg = state.split(/{|}/g)[1];
-              console.log("test", arg);
-              code = code.replace(regex, args[arg]);
-              console.log(code);
-            });
-          const element = <div dangerouslySetInnerHTML={{ __html: code }} />;
+          const raw = elementType.code;
+          const code = transform(raw, { presets: [[preset]] }).code;
+          const func = new Function("React", `return ${code}`);
+          const Component = func(React);
+          const element = <Component args={args} />;
           children.push(element);
           elementType = template[text];
           args = {};
@@ -65,17 +59,11 @@ const Contemplations = ({ sheetId }) => {
         args[key] = text;
       }
     });
-    let code = elementType.code;
-    let r = code.match(/\{[\w]+\}/g);
-    console.log(r);
-    r &&
-      r.forEach((state) => {
-        var regex = new RegExp(state, "g");
-        var arg = state.split(/{|}/g)[1];
-        code = code.replace(regex, args[arg]);
-        console.log(code);
-      });
-    const element = <><style>{elementType.style}</style><div dangerouslySetInnerHTML={{ __html: code }} /></>;
+    const raw = elementType.code;
+    const code = transform(raw, { presets: [[preset]] }).code;
+    const func = new Function("React", `return ${code}`);
+    const Component = func(React);
+    const element = <Component args={args} />;
     children.push(element);
     return <>{children}</>;
   };

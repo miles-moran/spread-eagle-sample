@@ -1,11 +1,12 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import Block from "./Block";
+import Block from "./Loading";
 import { transform } from "@babel/core";
 import preset from "@babel/preset-react";
+import Loading from "./Loading";
 const Contemplations = ({ sheetId }) => {
   const url = `https://spreadsheets.google.com/feeds/worksheets/${sheetId}/public/basic?alt=json`;
-  const [page, setPage] = useState(<div>contemplations</div>);
+  const [page, setPage] = useState(<Loading/>);
   useEffect(() => {
     axios.get(url).then((res) => {
       const sheets = res.data.feed.entry;
